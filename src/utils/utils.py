@@ -10,29 +10,32 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint"):
         boxes_preds (tensor): Predictions of Bounding Boxes (BATCH_SIZE, 4)
         boxes_labels (tensor): Correct labels of Bounding Boxes (BATCH_SIZE, 4)
         box_format (str): midpoint/corners, if boxes (x,y,w,h) or (x1,y1,x2,y2)
+    
+    Return:
+        Tensor: Intersection over union score for all examples (BATCH_SIZE, 1)
     """
-    ## box_format (str): midpoint/corners, if boxes (x,y,w,h) or (x1,y1,x2,y2)
-    if box_format == "midpoints":
-        box1_x1 = boxes_preds[...,0] - boxes_preds[...,2] / 2
-        box1_y1 = boxes_preds[...,1] - boxes_preds[...,3] / 2
-        box1_x2 = boxes_preds[...,0] + boxes_preds[...,2] / 2
-        box1_y2 = boxes_preds[...,1] + boxes_preds[...,3] / 2
 
-        box2_x1 = boxes_labels[...,0] - boxes_labels[...,2] / 2
-        box2_y1 = boxes_labels[...,1] - boxes_labels[...,3] / 2
-        box2_x2 = boxes_labels[...,0] + boxes_labels[...,2] / 2
-        box2_y2 = boxes_labels[...,1] + boxes_labels[...,3] / 2
+    if box_format == "midpoints":
+        box1_x1 = boxes_preds[...,0:1] - boxes_preds[...,2:3] / 2 ## We take 0:1 because we want to keep the dimension (BATCHES, 1) if we dont do this, the dimension will be (BATCHES)
+        box1_y1 = boxes_preds[...,1:2] - boxes_preds[...,3:4] / 2
+        box1_x2 = boxes_preds[...,0:1] + boxes_preds[...,2:3] / 2
+        box1_y2 = boxes_preds[...,1:2] + boxes_preds[...,3:4] / 2
+
+        box2_x1 = boxes_labels[...,0:1] - boxes_labels[...,2:3] / 2
+        box2_y1 = boxes_labels[...,1:1] - boxes_labels[...,3:4] / 2
+        box2_x2 = boxes_labels[...,0:1] + boxes_labels[...,2:3] / 2
+        box2_y2 = boxes_labels[...,1:2] + boxes_labels[...,3:4] / 2
         
     if box_format == "corners":
-        box1_x1 = boxes_preds[...,0]
-        box1_y1 = boxes_preds[...,1]
-        box1_x2 = boxes_preds[...,2]
-        box1_y2 = boxes_preds[...,3]
+        box1_x1 = boxes_preds[...,0:1]
+        box1_y1 = boxes_preds[...,1:2]
+        box1_x2 = boxes_preds[...,2:3]
+        box1_y2 = boxes_preds[...,3:4]
 
-        box2_x1 = boxes_labels[...,0]
-        box2_y1 = boxes_labels[...,1]
-        box2_x2 = boxes_labels[...,2]
-        box2_y2 = boxes_labels[...,3]
+        box2_x1 = boxes_labels[...,0:1]
+        box2_y1 = boxes_labels[...,1:2]
+        box2_x2 = boxes_labels[...,2:3]
+        box2_y2 = boxes_labels[...,3:4]
     
     x1 = torch.max(box1_x1, box2_x1)
     y1 = torch.max(box1_y1, box2_y1)
