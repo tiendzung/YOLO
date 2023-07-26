@@ -1,0 +1,8 @@
+net:
+  __target__: src.model.yolo_v1.YoloV1
+  __partial__: true
+  architecture: None
+  num_classes: 20
+  grid_cell: 7
+  num_boxes: 2
+  image_size: 448
