@@ -75,18 +75,18 @@ class YoloLoss(nn.Module):
         #########################
         #  FOR NO OBJECT LOSS   #
         #########################
-        
-        # no_object_loss = 0
-        # for i in range(self.B):
-        #     no_object_loss += self.mse(
-        #         torch.flatten((1 - exists_box) * predictions[..., self.C + 5 * i : self.C + 5 * i + 1]),
-        #         torch.flatten((1 - exists_box) * target[..., self.C : self.C + 1])
-        #     )
 
-        no_object_loss = self.mse(
-            torch.flatten((1 - exists_box) * pred_box), ## (Batch, S, S, 1) * (Batch, S, S, 1)
-            torch.flatten((1 - exists_box) * target[..., self.C : self.C + 1])
-        )
+        no_object_loss = 0
+        for i in range(self.B):
+            no_object_loss += self.mse(
+                torch.flatten((1 - exists_box) * predictions[..., self.C + 5 * i : self.C + 5 * i + 1]),
+                torch.flatten((1 - exists_box) * target[..., self.C : self.C + 1])
+            )
+
+        # no_object_loss = self.mse(
+        #     torch.flatten((1 - exists_box) * pred_box), ## (Batch, S, S, 1) * (Batch, S, S, 1)
+        #     torch.flatten((1 - exists_box) * target[..., self.C : self.C + 1])
+        # )
 
         # print(no_object_loss)
         #########################
