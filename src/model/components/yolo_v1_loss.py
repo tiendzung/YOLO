@@ -18,14 +18,14 @@ class YoloLoss(nn.Module):
         ious = []
         for i in range(self.B):
             iou = intersection_over_union(predictions[..., self.C + i * 5 + 1: self.C + i * 5 + 1 + 4], 
-                                          target[..., 21:25], box_format="midpoint")
+                                          target[..., self.C + 1: self.C + 1 + 4], box_format="midpoint")
             ious.append(iou.unsqueeze(0)) ## (1, Batch, S, S, 1)
             # print(iou.shape)
         ious = torch.cat(ious, dim=0)  ## (N, Batch, S, S, 1)
 
         # Find the best box
         iou_maxes, best_box = torch.max(ious, dim=0) ## (Batch, S, S, 1),
-        exists_box = target[..., 20].unsqueeze(3) ## (Batch, S, S, 1) 
+        exists_box = target[..., self.C].unsqueeze(3) ## (Batch, S, S, 1) 
         # print(ious.shape)
 
         #########################
@@ -46,7 +46,7 @@ class YoloLoss(nn.Module):
         ## Take the square root of the width and height, we need to use abs because  width and height can be negative
         box_predictions[..., 2:4] = torch.sign(box_predictions[...,2:4])*torch.sqrt(torch.abs(box_predictions[...,2:4]) + 1e6)
 
-        box_targets = exists_box * target[..., 21:25] ## (Batch, S, S, 1) * (Batch, S, S, 4)
+        box_targets = exists_box * target[..., self.C + 1 : self.C + 1 + 4] ## (Batch, S, S, 1) * (Batch, S, S, 4)
         box_targets[..., 2:4] = torch.sqrt(box_targets[..., 2:4])
 
         # (N, S, S, 4) -> (N*S*S, 4) ## Actually, we dont need to do this but just do it for our logic
@@ -76,6 +76,7 @@ class YoloLoss(nn.Module):
         #  FOR NO OBJECT LOSS   #
         #########################
 
+        ## We need to sum all of predicted boxes in a grid cell because we want all of object confidence of predicted boxes to be zero!
         no_object_loss = 0
         for i in range(self.B):
             no_object_loss += self.mse(
@@ -94,8 +95,8 @@ class YoloLoss(nn.Module):
         #########################
 
         class_loss = self.mse(
-            torch.flatten(predictions[..., :self.C], end_dim = -2), # (N, S, S, Class) -> (N*S*S, Class)
-            torch.flatten(target[..., :self.C], end_dim = -2), # (N, S, S, Class) -> (N*S*S, Class)
+            torch.flatten(exists_box * predictions[..., :self.C], end_dim = -2), # (N, S, S, Class) -> (N*S*S, Class)
+            torch.flatten(exists_box * target[..., :self.C], end_dim = -2), # (N, S, S, Class) -> (N*S*S, Class)
         )
 
         # print(class_loss)
@@ -112,10 +113,13 @@ class YoloLoss(nn.Module):
         return loss
     
 def main():
-    loss_fn = YoloLoss(S = 7, B = 4, C = 20)
+    S = 10
+    B = 10
+    C = 10
+    loss_fn = YoloLoss(S = S, B = B, C = C)
 
-    predictions = torch.randn((2, 7, 7, 20 + 4 * 5)) ## (Batch, S, S, C + B * 5)
-    target = torch.abs(torch.randn((2, 7, 7, 20 + 5))) ## (Batch, S, S, C, B)
+    predictions = torch.randn((2, S, S, C + B * 5)) ## (Batch, S, S, C + B * 5)
+    target = torch.abs(torch.randn((2, S, S, C + 5))) ## (Batch, S, S, C, B)
 
     res = loss_fn(predictions, target)
     print(res)
