@@ -1,0 +1,19 @@
+_target_: src.data.voc_datamodule.VOCDataModule
+
+defaults:
+  - transform_train: default.yaml
+  - transform_val: default.yaml
+
+dataset:
+  _target_: src.data.voc_datamodule.VOCDataset
+  csv_file: /Users/tiendzung/Project/YOLO/data/100examples.csv
+  img_dir: /Users/tiendzung/Project/YOLO/data/images
+  label_dir: /Users/tiendzung/Project/YOLO/data/labels
+  S: 7
+  B: 2
+  C: 20
+
+train_val_test_split: [83, 10, 10]
+batch_size: 16
+num_workers: 4
+pin_memory: True
